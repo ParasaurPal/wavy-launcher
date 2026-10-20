@@ -1,84 +1,35 @@
-name: Compile and Build APK
+name: Build APK
 
-on:
-  push:
-    branches: [ "main", "master" ]
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Set up Java 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-
-    - name: Install Build Tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ecj dx aapt zip apksigner wget
-
-    - name: Download Android SDK Stubs
-      run: |
-        mkdir -p ~/.android
-        wget -O ~/.android/android.jar https://github.com/Sable/android-platforms/raw/master/android-34/android.jar
-
-    - name: Compile Java & Build APK
-      run: |
-        mkdir -p build_out/classes_temp
-        
-        # Find all Java files anywhere in the repo and compile them together
-        find . -name "*.java" > sources.txt
-        if [ ! -s sources.txt ]; then
-          echo "Error: No Java files found in repository!"
-          exit 1
-        fi
-        
-        ecj -cp ~/.android/android.jar -d build_out/classes_temp @sources.txt
-
-        # Convert compiled classes to DEX
-        cd build_out
-        dx --dex --output=classes.dex classes_temp/**/*.class || dx --dex --output=classes.dex $(find classes_temp -name "*.class")
-
-        # Create basic APK container with AndroidManifest
-        # If AndroidManifest.xml is in a subfolder, find it; otherwise use a default fallback
-        MANIFEST_PATH=$(find .. -name "AndroidManifest.xml" | head -n 1)
-        if [ -z "$MANIFEST_PATH" ]; then
-          echo "Creating default AndroidManifest.xml..."
-          cat << 'EOF' > AndroidManifest.xml
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.wave.app">
-    <application android:label="Wave App">
-        <activity android:name=".MainActivity" android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-    </application>
-</manifest>
-EOF
-        else
-          cp "$MANIFEST_PATH" AndroidManifest.xml
-        fi
-
-        # Package APK using aapt and zip
-        aapt package -f -M AndroidManifest.xml -I ~/.android/android.jar -F FreshWave.unaligned.apk
-        zip -u FreshWave.unaligned.apk classes.dex
-
-        # Generate Keystore and Sign APK
-        keytool -genkey -v -keystore release-key.jks -alias my-alias -keyalg RSA -keysize 2048 -validity 10000 -passin pass:password -passout pass:password
-        apksigner sign --ks release-key.jks --ks-pass pass:password FreshWave.unaligned.apk
-        mv FreshWave.unaligned.apk FreshWave.apk
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: FreshWave
-        path: build_out/FreshWave.apk
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Compile and Sign APK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ecj dx aapt zip apksigner wget
+          mkdir -p ~/.android build_out classes_temp
+          wget -O ~/.android/android.jar https://github.com/Sable/android-platforms/raw/master/android-34/android.jar
+          find . -name "*.java" > sources.txt
+          ecj -cp ~/.android/android.jar -d classes_temp @sources.txt
+          dx --dex --output=build_out/classes.dex $(find classes_temp -name "*.class")
+          cd build_out
+          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.wave.app"><application android:label="Wave App"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity></application></manifest>' > AndroidManifest.xml
+          aapt package -f -M AndroidManifest.xml -I ~/.android/android.jar -F FreshWave.apk
+          zip -u FreshWave.apk classes.dex
+          keytool -genkey -v -keystore key.jks -alias alias -keyalg RSA -keysize 2048 -validity 10000 -passin pass:password -passout pass:password
+          apksigner sign --ks key.jks --ks-pass pass:password FreshWave.apk
+          
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FreshWave
+          path: build_out/FreshWave.apk
