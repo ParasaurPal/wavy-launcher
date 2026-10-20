@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Android App
 
 on: [push]
 
@@ -13,35 +13,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           
-      - name: Universal Build Fallback
+      - name: Build with Gradle
         run: |
-          mkdir -p build_out classes_temp
-          
-          if ! find . -name "*.java" | grep -q .; then
-            echo "package com.wave.app; import android.app.Activity; import android.os.Bundle; public class MainActivity extends Activity { @Override protected void onCreate(Bundle savedInstanceState) { super.onCreate(savedInstanceState); } }" > MainActivity.java
-          fi
-          
-          find . -name "*.java" > sources.txt
-          javac -cp "" -d classes_temp $(cat sources.txt) || ecj -d classes_temp @sources.txt || echo "Compilation skipped..."
-          
-          cd build_out
-          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.wave.app"><uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34"/><application android:label="Wave App"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity></application></manifest>' > AndroidManifest.xml
-          
-          if [ -d "../classes_temp" ] && [ "$(ls -A ../classes_temp)" ]; then
-            jar cf classes.jar -C ../classes_temp .
-            d8 classes.jar --output . || touch classes.dex
-          else
-            touch classes.dex
-          fi
-          
-          zip -j FreshWave.apk AndroidManifest.xml classes.dex || true
-          
-          if command -v keytool &> /dev/null && command -v apksigner &> /dev/null; then
-            keytool -genkey -v -keystore key.jks -alias alias -keyalg RSA -keysize 2048 -validity 10000 -passin pass:password -passout pass:password || true
-            apksigner sign --ks key.jks --ks-pass pass:password FreshWave.apk || true
-          fi
+          chmod +x gradlew || true
+          # If gradlew wrapper is missing, download it or build using gradle
+          gradle assembleDebug || ./gradlew assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
-          name: FreshWave
-          path: build_out/FreshWave.apk
+          name: FreshWave-Debug
+          path: app/build/outputs/apk/debug/app-debug.
+          apk
