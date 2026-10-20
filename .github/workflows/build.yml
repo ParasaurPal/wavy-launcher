@@ -13,21 +13,29 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           
-      - name: Build APK
+      - name: Build and Align APK
         run: |
           sudo apt-get update
-          sudo apt-get install -y ecj aapt zip apksigner wget dx || true
+          sudo apt-get install -y ecj aapt zip apksigner zipalign wget dx || true
           mkdir -p ~/.android build_out classes_temp
           wget -O ~/.android/android.jar https://github.com/Sable/android-platforms/raw/master/android-34/android.jar || true
+          
           find . -name "*.java" > sources.txt
           ecj -cp ~/.android/android.jar -d classes_temp @sources.txt || true
           d8 --lib ~/.android/android.jar $(find classes_temp -name "*.class") --output build_out/ || true
+          
           cd build_out
-          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.wave.app"><application android:label="Wave App"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity></application></manifest>' > AndroidManifest.xml
-          aapt package -f -M AndroidManifest.xml -I ~/.android/android.jar -F FreshWave.apk || true
-          zip -u FreshWave.apk classes.dex || true
+          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.wave.app"><uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34"/><application android:label="Wave App"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity></application></manifest>' > AndroidManifest.xml
+          
+          aapt package -f -M AndroidManifest.xml -I ~/.android/android.jar -F unaligned.apk
+          zip -u unaligned.apk classes.dex
+          
+          # Align APK for modern Android compatibility
+          zipalign -v 4 unaligned.apk FreshWave.apk
+          
+          # Sign APK
           keytool -genkey -v -keystore key.jks -alias alias -keyalg RSA -keysize 2048 -validity 10000 -passin pass:password -passout pass:password || true
-          apksigner sign --ks key.jks --ks-pass pass:password FreshWave.apk || true
+          apksigner sign --ks key.jks --ks-pass pass:password FreshWave.apk
           
       - uses: actions/upload-artifact@v4
         with:
