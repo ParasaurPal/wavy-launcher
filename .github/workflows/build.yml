@@ -13,13 +13,20 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           
-      - name: Build with Gradle
+      - name: Install Gradle and Build APK
         run: |
-          chmod +x gradlew || true
-          # If gradlew wrapper is missing, download it or build using gradle
-          gradle assembleDebug || ./gradlew assembleDebug
+          # Download and set up Gradle automatically on the fly
+          wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
+          unzip -q gradle-8.5-bin.zip
+          export PATH=$PWD/gradle-8.5/bin:$PATH
+          
+          # Initialize wrapper and build debug APK
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
           name: FreshWave-Debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.
+          apk
