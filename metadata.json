@@ -1,0 +1,8 @@
+{
+  "name": "Wavy Launcher",
+  "description": "A fluid and modern Android launcher featuring a signature wavy alphabet index for rapid, tactile app navigation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wavy Launcher</string>
+    <string name="search_hint">Search apps…</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="all_apps_title">All Applications</string>
+    <string name="no_apps_found">No apps found matching your search</string>
+    <string name="app_info">App Info</string>
+    <string name="pin_favorite">Pin to Favorites</string>
+    <string name="unpin_favorite">Remove from Favorites</string>
+    <string name="launch_app">Launch Application</string>
+    <string name="settings_title">Launcher Settings</string>
+    <string name="settings_wave_intensity">Wave Distortion Curve</string>
+    <string name="settings_hand_side">Alphabet Scrubber Side</string>
+    <string name="side_right">Right Edge</string>
+    <string name="side_left">Left Edge</string>
+    <string name="settings_app_layout">App Drawer Layout</string>
+    <string name="layout_list">Alphabetical List</string>
+    <string name="layout_grid">Modern Grid</string>
+    <string name="settings_theme">Color Theme</string>
+    <string name="theme_dark">AMOLED Dark</string>
+    <string name="theme_light">Clean Light</string>
+    <string name="theme_dynamic">Dynamic Material You</string>
+    <string name="wave_subtle">Subtle</string>
+    <string name="wave_medium">Medium Wave</string>
+    <string name="wave_high">Dramatic Wave</string>
+    <string name="set_as_default_launcher">Set as Default Home</string>
+    <string name="haptics_toggle">Haptic Wave Feedback</string>
+    <string name="show_favorites_bar">Show Favorites Dock</string>
+</resources>
