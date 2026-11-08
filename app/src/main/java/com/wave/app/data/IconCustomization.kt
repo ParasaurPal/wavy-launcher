@@ -45,7 +45,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 enum class IconThemeMode(val label: String, val description: String) {
     CATEGORY_APP_COLOR("Category (App Colors)", "Play Store category icon tinted with each app's vibrant color"),
     CATEGORY_WALLPAPER_COLOR("Category (Wallpaper Tint)", "Play Store category icon matching dynamic system / wallpaper palette"),
-    ORIGINAL_APP_ICON("Original App Icons", "Displays the device's native application icons")
+    ORIGINAL_APP_ICON("Original App Icons", "Displays the device's native application icons"),
+    ICON_PACK("Third-Party Icon Pack", "Use icons from an installed third-party icon pack")
 }
 
 sealed class CustomAppIcon {
