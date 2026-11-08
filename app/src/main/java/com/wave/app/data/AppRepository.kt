@@ -1,5 +1,6 @@
 package com.wave.app.data
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -20,11 +21,14 @@ class AppRepository(private val context: Context) {
 
     private val iconCache = mutableMapOf<String, ImageBitmap>()
 
-    suspend fun loadApps(): List<AppInfoItem> = withContext(Dispatchers.IO) {
+    suspend fun loadApps(settings: LauncherSettings): List<AppInfoItem> = withContext(Dispatchers.IO) {
         val pm = context.packageManager
         val intent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
+
+        iconCache.clear() // Clear cache so new icon pack applies
+        val activePack = if (settings.iconThemeMode == IconThemeMode.ICON_PACK) settings.selectedIconPackPackage else null
 
         val resolveInfos = try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -42,7 +46,7 @@ class AppRepository(private val context: Context) {
 
         for (resolveInfo in resolveInfos) {
             val pkg = resolveInfo.activityInfo.packageName
-            if (pkg == context.packageName) continue // Skip wavy launcher itself
+            if (pkg == context.packageName) continue
             if (!processedPackages.add(pkg)) continue
 
             val label = resolveInfo.loadLabel(pm)?.toString()?.trim() ?: pkg
@@ -52,7 +56,11 @@ class AppRepository(private val context: Context) {
             } ?: '#'
 
             try {
-                val iconDrawable = resolveInfo.loadIcon(pm)
+                val component = ComponentName(pkg, className)
+                var iconDrawable = if (activePack != null) IconPackManager.getIcon(context, component, activePack) else null
+                if (iconDrawable == null) {
+                    iconDrawable = resolveInfo.loadIcon(pm)
+                }
                 val bitmap = drawableToBitmap(iconDrawable)
                 iconCache[pkg] = bitmap.asImageBitmap()
             } catch (_: Exception) {
@@ -77,7 +85,6 @@ class AppRepository(private val context: Context) {
             )
         }
 
-        // Also query installed applications to ensure system tools with launcher entry are captured
         try {
             val installedApps = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 pm.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0L))
@@ -95,12 +102,18 @@ class AppRepository(private val context: Context) {
                     val letter = label.firstOrNull()?.uppercaseChar()?.let {
                         if (it in 'A'..'Z') it else '#'
                     } ?: '#'
+                    
                     try {
-                        val iconDrawable = appInfo.loadIcon(pm)
+                        val component = launchIntent.component ?: ComponentName(pkg, "")
+                        var iconDrawable = if (activePack != null) IconPackManager.getIcon(context, component, activePack) else null
+                        if (iconDrawable == null) {
+                            iconDrawable = appInfo.loadIcon(pm)
+                        }
                         val bitmap = drawableToBitmap(iconDrawable)
                         iconCache[pkg] = bitmap.asImageBitmap()
                     } catch (_: Exception) {
                     }
+                    
                     val category = AppCategory.detectCategory(pkg, label)
                     realApps.add(
                         AppInfoItem(
@@ -122,8 +135,6 @@ class AppRepository(private val context: Context) {
         } catch (_: Exception) {
         }
 
-        // If running in a minimal emulator or container environment with few apps,
-        // complement with standard apps so the entire A-Z wavy index has rich items to test
         val sampleApps = if (realApps.size < 12) {
             getComplementaryApps(processedPackages)
         } else {
