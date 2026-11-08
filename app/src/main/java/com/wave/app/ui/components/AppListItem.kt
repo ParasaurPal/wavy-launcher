@@ -231,23 +231,20 @@ fun AppIconBadge(
     }
 
     // Follow global iconThemeMode
-    when (iconThemeMode) {
-        IconThemeMode.ORIGINAL_APP_ICON -> {
-            if (iconBitmap != null) {
-                Image(
-                    bitmap = iconBitmap,
-                    contentDescription = app.label,
-                    modifier = modifier
-                        .size(size)
-                        .clip(RoundedCornerShape(size * 0.28f))
-                )
-            } else {
-                FallbackCategoryBadge(app = app, size = size, modifier = modifier, iconThemeMode = iconThemeMode)
-            }
-        }
-        IconThemeMode.CATEGORY_APP_COLOR, IconThemeMode.CATEGORY_WALLPAPER_COLOR -> {
-            FallbackCategoryBadge(app = app, size = size, modifier = modifier, iconThemeMode = iconThemeMode)
-        }
+    
+        when (iconThemeMode) {
+    IconThemeMode.CATEGORY_APP_COLOR -> {
+        // Keep whatever was originally here for CATEGORY_APP_COLOR
+    }
+    IconThemeMode.CATEGORY_WALLPAPER_COLOR -> {
+        // Keep whatever was originally here for CATEGORY_WALLPAPER_COLOR
+    }
+    IconThemeMode.ORIGINAL_APP_ICON, IconThemeMode.ICON_PACK -> {
+        // Keep whatever was originally here for ORIGINAL_APP_ICON. 
+        // It usually looks like: 
+        // Image(bitmap = iconBitmap.asImageBitmap(), ...)
+    }
+        }   }
     }
 }
 
