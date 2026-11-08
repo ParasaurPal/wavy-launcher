@@ -52,5 +52,6 @@ data class LauncherSettings(
     val t9SearchEnabled: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val hapticFeedback: Boolean = true,
-    val showFavoritesDock: Boolean = true
+    val showFavoritesDock: Boolean = true,
+    val selectedIconPackPackage: String? = null // ADD THIS LINE
 )
