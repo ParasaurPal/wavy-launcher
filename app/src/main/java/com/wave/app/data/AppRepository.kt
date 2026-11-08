@@ -21,7 +21,7 @@ class AppRepository(private val context: Context) {
 
     private val iconCache = mutableMapOf<String, ImageBitmap>()
 
-    suspend fun loadApps(settings: LauncherSettings): List<AppInfoItem> = withContext(Dispatchers.IO) {
+    suspend fun loadApps(settings: LauncherSettings = LauncherSettings()): List<AppInfoItem> = withContext(Dispatchers.IO) {
         val pm = context.packageManager
         val intent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
