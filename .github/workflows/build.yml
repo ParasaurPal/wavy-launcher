@@ -13,8 +13,9 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
     - uses: gradle/actions/setup-gradle@v3
-    - run: chmod +x gradlew
-    - run: ./gradlew assembleDebug
+      with:
+        gradle-version: 9.3.1
+    - run: gradle assembleDebug
     - uses: actions/upload-artifact@v4
       with:
         name: FreshWave-Debug
