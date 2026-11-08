@@ -6,11 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.wave.app.data.AppInfoItem
 import com.wave.app.data.AppRepository
 import com.wave.app.data.CustomAppIcon
+import com.wave.app.data.IconPackManager
 import com.wave.app.data.IconThemeMode
 import com.wave.app.data.IndexInteractionMode
+import com.wave.app.data.InstalledIconPack
 import com.wave.app.data.LauncherSettings
 import com.wave.app.ui.components.PhoneSearchResult
 import com.wave.app.ui.components.T9SearchHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 class LauncherViewModel(application: Application) : AndroidViewModel(application) {
@@ -26,6 +30,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     private val _rawApps = MutableStateFlow<List<AppInfoItem>>(emptyList())
     private val _customIcons = MutableStateFlow<Map<String, CustomAppIcon>>(emptyMap())
+    
+    // New: State to hold installed icon packs
+    private val _availableIconPacks = MutableStateFlow<List<InstalledIconPack>>(emptyList())
+    val availableIconPacks: StateFlow<List<InstalledIconPack>> = _availableIconPacks.asStateFlow()
 
     val allApps: StateFlow<List<AppInfoItem>> = combine(_rawApps, _customIcons) { raw, custom ->
         raw.map { app ->
@@ -119,13 +127,24 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
 
     init {
+        loadIconPacks() // New
         refreshApps()
+    }
+
+    fun loadIconPacks() {
+        viewModelScope.launch {
+            val packs = withContext(Dispatchers.IO) {
+                IconPackManager.getInstalledPacks(getApplication())
+            }
+            _availableIconPacks.value = packs
+        }
     }
 
     fun refreshApps() {
         viewModelScope.launch {
             _isLoading.value = true
-            val loaded = repository.loadApps()
+            // Updated to pass the settings
+            val loaded = repository.loadApps(_settings.value)
             _rawApps.value = loaded
             _isLoading.value = false
         }
@@ -186,6 +205,16 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun setIconThemeMode(mode: IconThemeMode) {
         _settings.value = _settings.value.copy(iconThemeMode = mode)
+        refreshApps() // Reload icons to apply the theme
+    }
+
+    // New: Function to select an icon pack
+    fun selectIconPack(packPackageName: String?) {
+        _settings.value = _settings.value.copy(
+            iconThemeMode = if (packPackageName != null) IconThemeMode.ICON_PACK else IconThemeMode.CATEGORY_APP_COLOR,
+            selectedIconPackPackage = packPackageName
+        )
+        refreshApps()
     }
 
     fun launchApp(app: AppInfoItem): Boolean {
