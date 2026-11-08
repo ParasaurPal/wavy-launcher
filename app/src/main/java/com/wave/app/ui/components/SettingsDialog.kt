@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.wave.app.data.DrawerLayout
 import com.wave.app.data.IconThemeMode
 import com.wave.app.data.IndexInteractionMode
+import com.wave.app.data.InstalledIconPack
 import com.wave.app.data.LauncherSettings
 import com.wave.app.data.ScrubberSide
 import com.wave.app.data.ThemeMode
@@ -55,7 +56,9 @@ import com.wave.app.data.WaveIntensity
 @Composable
 fun SettingsDialog(
     settings: LauncherSettings,
+    availableIconPacks: List<InstalledIconPack>, // New parameter
     onUpdateSettings: (LauncherSettings) -> Unit,
+    onSelectIconPack: (String?) -> Unit, // New parameter
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -110,7 +113,7 @@ fun SettingsDialog(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Generate icons matching each Play Store category, tinted with app colors or wallpaper palette.",
+                text = "Generate icons matching each Play Store category, or use a third-party icon pack.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -131,7 +134,13 @@ fun SettingsDialog(
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                 shape = RoundedCornerShape(12.dp)
                             )
-                            .clickable { onUpdateSettings(settings.copy(iconThemeMode = mode)) }
+                            .clickable { 
+                                if (mode == IconThemeMode.ICON_PACK) {
+                                    onSelectIconPack(settings.selectedIconPackPackage ?: availableIconPacks.firstOrNull()?.packageName)
+                                } else {
+                                    onUpdateSettings(settings.copy(iconThemeMode = mode)) 
+                                }
+                            }
                             .padding(horizontal = 14.dp, vertical = 10.dp)
                             .testTag("icon_mode_${mode.name}")
                     ) {
@@ -147,6 +156,54 @@ fun SettingsDialog(
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                    }
+                }
+            }
+
+            // Icon Pack Selector Dropdown
+            if (settings.iconThemeMode == IconThemeMode.ICON_PACK) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Select Installed Icon Pack",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                if (availableIconPacks.isEmpty()) {
+                    Text(
+                        text = "No icon packs found. Install one from the Play Store.",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        availableIconPacks.forEach { pack ->
+                            val isSelected = settings.selectedIconPackPackage == pack.packageName
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                                    )
+                                    .border(
+                                        width = 1.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable { onSelectIconPack(pack.packageName) }
+                                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                            ) {
+                                Text(
+                                    text = pack.name,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
                     }
                 }
