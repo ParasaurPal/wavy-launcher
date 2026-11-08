@@ -123,6 +123,7 @@ fun LauncherScreen(
     val isT9SearchActive by viewModel.isT9SearchActive.collectAsState()
     val phoneSearchResults by viewModel.phoneSearchResults.collectAsState()
     val settings by viewModel.settings.collectAsState()
+    val availableIconPacks by viewModel.availableIconPacks.collectAsState() // New state
     val selectedAppForDetails by viewModel.selectedAppForDetails.collectAsState()
     val selectedAppForIconPicker by viewModel.selectedAppForIconPicker.collectAsState()
     val isSettingsOpen by viewModel.isSettingsOpen.collectAsState()
@@ -387,7 +388,9 @@ fun LauncherScreen(
     if (isSettingsOpen) {
         SettingsDialog(
             settings = settings,
+            availableIconPacks = availableIconPacks, // Passed in
             onUpdateSettings = { viewModel.updateSettings(it) },
+            onSelectIconPack = { viewModel.selectIconPack(it) }, // Passed in
             onDismiss = { viewModel.setSettingsOpen(false) }
         )
     }
