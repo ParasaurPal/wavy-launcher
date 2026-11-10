@@ -201,7 +201,7 @@ fun T9SearchKeypad(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 16.dp, vertical = 10.dp)
             .testTag("t9_keypad"),
         horizontalAlignment = Alignment.CenterHorizontally
